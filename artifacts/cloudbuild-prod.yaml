@@ -1,0 +1,53 @@
+steps:
+
+# Delete Previous Deployment
+# This step deletes the previous deployment of the app.
+- name: 'gcr.io/cloud-builders/kubectl'
+  id: Delete Deployment
+  args: 
+  - 'delete'
+  - 'deployment'
+  - flaskapp-prod
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=democluster'
+
+# Delete Previous Service
+# This step deletes the service associated with the deployment
+- name: 'gcr.io/cloud-builders/kubectl'
+  id: Delete Service
+  args: 
+  - 'delete' 
+  - 'svc'
+  - flaskapp-prod
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=democluster'
+
+  
+#  This step clones the test-gcp-cicd-pipeline repository
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: Clone env repository
+  entrypoint: /bin/sh
+  args:
+  - '-c'
+  - |
+    gcloud source repos clone test-gcp-cicd-pipeline && \
+    cd test-gcp-cicd-pipeline && \
+    git checkout master && \
+    git config user.email $(gcloud auth list --filter=status:ACTIVE --format='value(account)')
+
+
+# This step deploys the new version of our container image
+# in the hello-cloudbuild Kubernetes Engine cluster.
+- name: 'gcr.io/cloud-builders/kubectl'
+  id: Deploy
+  args:
+  - 'apply'
+  - '-f'
+  - 'artifacts/deploy-prod.yaml'
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=democluster'
+  
+logsBucket: 'gs://test-gcp-cicd-pipeline-build-logs'

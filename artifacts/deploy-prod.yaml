@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flaskapp-prod
+spec:
+  selector:
+    matchLabels:
+      app: flaskapp-prod
+  template:
+    metadata:
+      labels:
+        app: flaskapp-prod
+    spec:
+      containers:
+      - name: flaskapp-prod
+        image: gcr.io/go-de-internal-siroy/hello-cloudbuild:1
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flaskapp-prod
+spec:
+  type: LoadBalancer
+  selector:
+    app: flaskapp-prod
+  ports:
+  - port: 5000  
+    targetPort: 5000
